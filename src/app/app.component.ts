@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
@@ -14,14 +14,19 @@ export class AppComponent implements OnInit {
   constructor(private http: HttpClient) {}
 
   ngOnInit() {
-    this.http.get('/api/people/1').subscribe(json => console.log(json));
-
     const example = forkJoin([
-      this.http.get('https://swapi.co/api/people/1/'),
-      this.http.get('https://swapi.co/api/people/1/'),
+      this.http.get('https://swapi.co/api/people/1/').pipe(catchError(error => of(error))),
+      this.http.get('https://swapi.co/api/people/1/').pipe(catchError(error => of(error))),
       this.http.get('/api/people/1').pipe(catchError(error => of(error)))
     ]);
 
-    example.subscribe(val => console.log(val));
+    example.subscribe(responses => {
+      const successResponces = [];
+      const errorResponces = [];
+
+      responses.map(res => (res instanceof HttpErrorResponse ? errorResponces.push(res) : successResponces.push(res)));
+
+      console.log(successResponces, errorResponces);
+    });
   }
 }
